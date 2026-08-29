@@ -24,51 +24,119 @@ export default function BalanceCard({ group, expenses }) {
   }));
 
   return (
-    <section className="rounded-lg border border-gray-200 bg-white p-4">
-      <h2 className="text-base font-semibold">Who owes whom</h2>
-      <p className="mt-1 text-sm text-gray-500">
-        Net balances update live. Settlements are the fewest payments to zero everyone out.
-      </p>
+    <section className="overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm">
+      <div className="border-b border-gray-100 bg-gradient-to-r from-gray-50/80 to-white px-5 py-4">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-teal to-emerald-500 text-base shadow-sm">
+            ⚖️
+          </div>
+          <div>
+            <h2 className="font-nunito text-base font-bold text-brand-navy">Who Owes Whom</h2>
+            <p className="text-xs text-brand-muted">
+              Live net balances & simplified minimum settlements
+            </p>
+          </div>
+        </div>
+      </div>
 
-      <ul className="mt-4 divide-y divide-gray-100">
-        {rows.map((row) => (
-          <li key={row.id} className="flex items-center justify-between py-2 text-sm">
-            <span className="font-medium">{memberLabel(group, row.id)}</span>
-            <span
-              className={
-                row.amount > 0.005
-                  ? 'text-green-700 font-semibold'
-                  : row.amount < -0.005
-                    ? 'text-red-700 font-semibold'
-                    : 'text-gray-500'
-              }
-            >
-              {row.amount > 0.005
-                ? `is owed ${formatINR(row.amount)}`
-                : row.amount < -0.005
-                  ? `owes ${formatINR(Math.abs(row.amount))}`
-                  : 'settled'}
+      <div className="p-5">
+        {/* Balances List */}
+        <div className="grid gap-2.5 sm:grid-cols-2">
+          {rows.map((row) => {
+            const name = memberLabel(group, row.id);
+            const initial = name.charAt(0).toUpperCase() || 'U';
+            const isOwed = row.amount > 0.005;
+            const owes = row.amount < -0.005;
+
+            return (
+              <div
+                key={row.id}
+                className={`flex items-center justify-between rounded-xl border p-3 transition-all ${
+                  isOwed
+                    ? 'border-emerald-200 bg-emerald-50/50'
+                    : owes
+                      ? 'border-rose-200 bg-rose-50/50'
+                      : 'border-gray-200 bg-gray-50/50'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                      isOwed
+                        ? 'bg-emerald-600 text-white'
+                        : owes
+                          ? 'bg-rose-600 text-white'
+                          : 'bg-gray-400 text-white'
+                    }`}
+                  >
+                    {initial}
+                  </div>
+                  <span className="truncate text-xs font-semibold text-gray-900">{name}</span>
+                </div>
+
+                <div className="text-right">
+                  <span
+                    className={`inline-block rounded-lg px-2.5 py-1 text-xs font-bold ${
+                      isOwed
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : owes
+                          ? 'bg-rose-100 text-rose-800'
+                          : 'bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    {isOwed
+                      ? `+${formatINR(row.amount)}`
+                      : owes
+                        ? `-${formatINR(Math.abs(row.amount))}`
+                        : 'Settled'}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Minimum Settle-Up Payments */}
+        <div className="mt-5 rounded-xl border border-gray-200/90 bg-gradient-to-br from-gray-50 to-white p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-brand-navy">
+              Suggested Payments to Settle
+            </h3>
+            <span className="rounded-full bg-brand-blue/10 px-2 py-0.5 text-[10px] font-bold text-brand-blue">
+              Min Transactions
             </span>
-          </li>
-        ))}
-      </ul>
+          </div>
 
-      <div className="mt-4 rounded-md bg-gray-50 px-3 py-3">
-        <h3 className="text-sm font-semibold">Minimum payments</h3>
-        {settlements.length === 0 ? (
-          <p className="mt-1 text-sm text-gray-500">Everyone is even. No payments needed.</p>
-        ) : (
-          <ul className="mt-2 space-y-1 text-sm">
-            {settlements.map((tx, index) => (
-              <li key={`${tx.from}-${tx.to}-${index}`}>
-                <span className="font-medium">{memberLabel(group, tx.from)}</span>
-                {' pays '}
-                <span className="font-medium">{memberLabel(group, tx.to)}</span>
-                {` ${formatINR(tx.amount)}`}
-              </li>
-            ))}
-          </ul>
-        )}
+          {settlements.length === 0 ? (
+            <div className="mt-3 flex items-center gap-2 rounded-lg bg-emerald-50 p-2.5 text-xs font-medium text-emerald-800">
+              <span>🎉</span>
+              <p>Everyone is settled up! No payments needed right now.</p>
+            </div>
+          ) : (
+            <ul className="mt-3 space-y-2">
+              {settlements.map((tx, index) => {
+                const debtorName = memberLabel(group, tx.from);
+                const creditorName = memberLabel(group, tx.to);
+
+                return (
+                  <li
+                    key={`${tx.from}-${tx.to}-${index}`}
+                    className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-2.5 text-xs shadow-xs"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-bold text-gray-900 truncate">{debtorName}</span>
+                      <span className="shrink-0 text-brand-blue font-bold">➔</span>
+                      <span className="font-bold text-gray-900 truncate">{creditorName}</span>
+                    </div>
+                    <span className="shrink-0 font-nunito text-sm font-bold text-brand-purple">
+                      {formatINR(tx.amount)}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       </div>
     </section>
   );
